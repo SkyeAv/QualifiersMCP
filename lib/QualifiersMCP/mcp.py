@@ -21,8 +21,32 @@ MCP: object = FastMCP(
   instructions="QualifiersMCP provides tools for working with Biolink qualifiers in Tablassert Table Configuration. Tablassert is a system for managing and validating tabular data with structured metadata. Biolink qualifiers add semantic meaning to biological relationships by providing additional context such as negation, subject/object constraints, and other modalities. This MCP server offers three tool groups: biolink tools for fetching Biolink documentation and qualifier lists, table-config tools for managing Tablassert configurations including YAML conversion and validation, and local-services tools that depend on external services running on localhost (port 8051 for PMC mirror, port 8052 for dbssert)."
 )
 
-@MCP.tool(tags={"biolink"})
+
 @lru_cache(maxsize=24)
+def _get_biolink_qualifier_documentation_cached(qualifier: str) -> str:
+  url: str = f"https://raw.githubusercontent.com/biolink/biolink-model/gh-pages/{qualifier}/index.html"
+  response: object = requests.get(url, timeout=30)
+  html: str = response.text
+  return trafilatura.extract(html, output_format="markdown", include_tables=True, include_links=True, include_images=False, no_fallback=False) or "ERROR 01: Invalid Qualifier"
+
+
+@cache
+def _get_table_configuration_documentation_cached() -> str:
+  url: str = "https://raw.githubusercontent.com/SkyeAv/Tablassert/main/docs/configuration/table.md"
+  response: object = requests.get(url, timeout=30)
+  return response.text
+
+
+@cache
+def _get_table_configuration_model_schema_cached() -> str:
+  return Section.model_json_schema()
+
+
+@cache
+def _get_biolink_qualifier_list_cached() -> str:
+  return "\n".join(q.value for q in Qualifiers)
+
+@MCP.tool(tags={"biolink"})
 def get_biolink_qualifier_documentation(qualifier: Annotated[str, "The Biolink qualifier to fetch documentation for (e.g., 'negation', 'object', 'subject')."]) -> str:
   """Fetches Biolink qualifier documentation from GitHub.
 
@@ -35,13 +59,9 @@ def get_biolink_qualifier_documentation(qualifier: Annotated[str, "The Biolink q
   Raises / Notes:
     Error format: {"error": "message"} on failure.
   """
-  url: str = f"https://raw.githubusercontent.com/biolink/biolink-model/gh-pages/{qualifier}/index.html"
-  response: object = requests.get(url, timeout=30)
-  html: str = response.text
-  return trafilatura.extract(html, output_format="markdown", include_tables=True, include_links=True, include_images=False, no_fallback=False) or "ERROR 01: Invalid Qualifier"
+  return _get_biolink_qualifier_documentation_cached(qualifier)
 
 @MCP.tool(tags={"table-config"})
-@cache
 def get_table_configuration_documentation() -> str:
   """Retrieves Tablassert Table Configuration documentation from GitHub.
 
@@ -54,12 +74,9 @@ def get_table_configuration_documentation() -> str:
   Raises / Notes:
     Error format: {"error": "message"} on failure.
   """
-  url: str = "https://raw.githubusercontent.com/SkyeAv/Tablassert/main/docs/configuration/table.md"
-  response: object = requests.get(url, timeout=30)
-  return response.text
+  return _get_table_configuration_documentation_cached()
 
 @MCP.tool(tags={"table-config"})
-@cache
 def get_table_configuration_model_schema() -> str:
   """Returns JSON schema for Tablassert Section model.
 
@@ -72,10 +89,9 @@ def get_table_configuration_model_schema() -> str:
   Raises / Notes:
     Error format: {"error": "message"} on failure.
   """
-  return Section.model_json_schema()
+  return _get_table_configuration_model_schema_cached()
 
 @MCP.tool(tags={"biolink"})
-@cache
 def get_biolink_qualifier_list() -> str:
   """Lists all available Biolink qualifier enum values.
 
@@ -88,7 +104,7 @@ def get_biolink_qualifier_list() -> str:
   Raises / Notes:
     Error format: {"error": "message"} on failure.
   """
-  return "\n".join(q.value for q in Qualifiers)
+  return _get_biolink_qualifier_list_cached()
 
 @MCP.tool(tags={"table-config"})
 def read_yaml_to_sections_json(file_path: Annotated[str, "Path to the YAML file to read."]) -> list[dict[str, Any]]:
@@ -228,4 +244,3 @@ def get_canonical_curie_information_from_dbssert(curie: Annotated[str, "CURIE id
 
 def serve_mcp() -> None:
   MCP.run() # pyright: ignore
-
