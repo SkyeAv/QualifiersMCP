@@ -225,3 +225,7 @@ def get_canonical_curie_information_from_dbssert(curie: Annotated[str, "CURIE id
   except Exception as e:
     msg = {"error": str(e)}
     return msg
+
+def serve_mcp() -> None:
+  MCP.run() # pyright: ignore
+
