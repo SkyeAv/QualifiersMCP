@@ -117,6 +117,92 @@ docker load < result
 docker run --rm qualifiers-mcp:latest
 ```
 
+## MCP JSON Config Snippets (Popular Clients)
+
+Most MCP clients use a `mcpServers` object with a server name and a stdio
+command definition (`command` + `args`). The examples below include both
+`docker --rm -i` and `nix run` launch styles.
+
+### Claude Desktop (`claude_desktop_config.json`)
+
+```json
+{
+  "mcpServers": {
+    "qualifiers-mcp-docker": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "ghcr.io/skyeav/qualifiers-mcp-amd64:sha-<commit-sha>"
+      ]
+    },
+    "qualifiers-mcp-nix": {
+      "command": "nix",
+      "args": [
+        "run",
+        "github:SkyeAv/QualifiersMCP"
+      ]
+    }
+  }
+}
+```
+
+### Cursor (`.cursor/mcp.json`)
+
+```json
+{
+  "mcpServers": {
+    "qualifiers-mcp-docker": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "ghcr.io/skyeav/qualifiers-mcp-amd64:sha-<commit-sha>"
+      ]
+    },
+    "qualifiers-mcp-nix": {
+      "command": "nix",
+      "args": [
+        "run",
+        "github:SkyeAv/QualifiersMCP"
+      ]
+    }
+  }
+}
+```
+
+### Claude Code Project Config (`.mcp.json`)
+
+```json
+{
+  "mcpServers": {
+    "qualifiers-mcp-docker": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "ghcr.io/skyeav/qualifiers-mcp-amd64:sha-<commit-sha>"
+      ]
+    },
+    "qualifiers-mcp-nix": {
+      "command": "nix",
+      "args": [
+        "run",
+        "github:SkyeAv/QualifiersMCP"
+      ]
+    }
+  }
+}
+```
+
+Notes:
+
+- Replace `sha-<commit-sha>` with a real published tag from GHCR.
+- Keep `-i` in Docker args for stdio MCP transport.
+
 ## What This MCP Provides
 
 - **Biolink qualifier support:** Discover qualifier names and fetch qualifier docs from Biolink model pages
