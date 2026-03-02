@@ -36,7 +36,10 @@ def _get_table_configuration_documentation_cached() -> str:
 
 @cache
 def _get_table_configuration_model_schema_cached() -> str:
-  return Section.model_json_schema()
+  try:
+    return Section.model_json_schema()
+  except Exception as e:
+    return str(e)
 
 @cache
 def _get_biolink_qualifier_list_cached() -> str:
@@ -179,7 +182,7 @@ def download_pmc_file_from_local_mirror(pmc_id: Annotated[str, "PMC identifier (
   if "PMC" not in pmc_id:
     pmc_id = f"PMC{pmc_id}"
 
-  url: str = f"http://localhost:8051/extract-from-tar?filename={quote(pmc_id)}/{quote(file_name)}&tarpath={quote(download_root)}/{quote(pmc_id[:-3])}/{quote(pmc_id)}.tar.xz"
+  url: str = f"http://localhost:8051/extract-from-tar?filename={quote(pmc_id)}/{quote(file_name)}&tarpath={quote(download_root)}/{quote(pmc_id[-3:])}/{quote(pmc_id)}.tar.xz"
   try:
     with requests.get(url, stream=True) as r:
         r.raise_for_status()
