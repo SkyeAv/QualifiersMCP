@@ -1,6 +1,10 @@
 final: prev: {
   python313Packages = prev.python313Packages.override {
     overrides = pyFinal: pyPrev: {
+      fastmcp = pyPrev.fastmcp.overridePythonAttrs (old: {
+        dontCheckRuntimeDeps = true;
+        doCheck = false;
+      });
       qualifiers-mcp = pyFinal.buildPythonApplication rec {
         pname = "QualifiersMCP";
         version = "1.0.0";
@@ -12,9 +16,12 @@ final: prev: {
         ];
         propagatedBuildInputs = (with pyFinal; [
           trafilatura
-          tablassert
+          requests
           fastmcp
           pyyaml
+        ]) ++ (with prev.python313Packages; [
+          optimum-onnx
+          tablassert
         ]);
         doCheck = false;
       };
