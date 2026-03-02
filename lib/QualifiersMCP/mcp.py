@@ -21,7 +21,6 @@ MCP: object = FastMCP(
   instructions="QualifiersMCP provides tools for working with Biolink qualifiers in Tablassert Table Configuration. Tablassert is a system for managing and validating tabular data with structured metadata. Biolink qualifiers add semantic meaning to biological relationships by providing additional context such as negation, subject/object constraints, and other modalities. This MCP server offers three tool groups: biolink tools for fetching Biolink documentation and qualifier lists, table-config tools for managing Tablassert configurations including YAML conversion and validation, and local-services tools that depend on external services running on localhost (port 8051 for PMC mirror, port 8052 for dbssert)."
 )
 
-
 @lru_cache(maxsize=24)
 def _get_biolink_qualifier_documentation_cached(qualifier: str) -> str:
   url: str = f"https://raw.githubusercontent.com/biolink/biolink-model/gh-pages/{qualifier}/index.html"
@@ -29,18 +28,15 @@ def _get_biolink_qualifier_documentation_cached(qualifier: str) -> str:
   html: str = response.text
   return trafilatura.extract(html, output_format="markdown", include_tables=True, include_links=True, include_images=False, no_fallback=False) or "ERROR 01: Invalid Qualifier"
 
-
 @cache
 def _get_table_configuration_documentation_cached() -> str:
   url: str = "https://raw.githubusercontent.com/SkyeAv/Tablassert/main/docs/configuration/table.md"
   response: object = requests.get(url, timeout=30)
   return response.text
 
-
 @cache
 def _get_table_configuration_model_schema_cached() -> str:
   return Section.model_json_schema()
-
 
 @cache
 def _get_biolink_qualifier_list_cached() -> str:
