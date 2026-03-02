@@ -3,17 +3,17 @@ from tablassert.ingests import fastmerge
 from tablassert.enums import Qualifiers
 from tablassert.models import Section
 from functools import lru_cache
+from urllib.parse import quote
+from typing import Annotated
 from functools import cache
 from fastmcp import FastMCP
 from typing import Union
-from typing import Annotated
 from typing import Any
 import trafilatura
 import requests
 import shutil
 import json
 import yaml
-import gzip
 
 MCP: object = FastMCP(
   name="QualifiersMCP",
@@ -23,7 +23,7 @@ MCP: object = FastMCP(
 
 @lru_cache(maxsize=24)
 def _get_biolink_qualifier_documentation_cached(qualifier: str) -> str:
-  url: str = f"https://raw.githubusercontent.com/biolink/biolink-model/gh-pages/{qualifier}/index.html"
+  url: str = f"https://raw.githubusercontent.com/biolink/biolink-model/gh-pages/{quote(qualifier)}/index.html"
   response: object = requests.get(url, timeout=30)
   html: str = response.text
   return trafilatura.extract(html, output_format="markdown", include_tables=True, include_links=True, include_images=False, no_fallback=False) or "ERROR 01: Invalid Qualifier"
@@ -161,7 +161,7 @@ def validate_json_table_configuration_syntax(json_configuration: Annotated[str, 
     return msg
 
 @MCP.tool(tags={"local-services"})
-def download_pmc_file_from_local_mirror(pmc_id: Annotated[str, "PMC identifier (e.g., 'PMC123456' or '123456')."], file_name: Annotated[str, "Name of the file to extract from the archive."], download_root: Annotated[str, "Root directory for PMC tar files."] = "/15TB_1/users/gglusman/PMC/tars") -> str:
+def download_pmc_file_from_local_mirror(pmc_id: Annotated[str, "PMC identifier (e.g., 'PMC123456' or '123456')."], file_name: Annotated[str, "Name of the file to extract from the archive."], download_root: Annotated[str, "Root directory for PMC tar files."] = "/15TB_1/users/gglusman/PMC/tars") -> dict[str, str]:
   """Downloads PMC file from local HTTP mirror service.
 
   Args:
@@ -179,18 +179,17 @@ def download_pmc_file_from_local_mirror(pmc_id: Annotated[str, "PMC identifier (
   if "PMC" not in pmc_id:
     pmc_id = f"PMC{pmc_id}"
 
-  url: str = f"http://localhost:8051/extract-from-tar?filename={pmc_id}/{file_name}&tarpath={download_root}/{pmc_id[-3:]}/{pmc_id}.tar.xz"
+  url: str = f"http://localhost:8051/extract-from-tar?filename={quote(pmc_id)}/{quote(file_name)}&tarpath={quote(download_root)}/{quote(pmc_id)}/{quote(pmc_id)[:-3]}/{quote(pmc_id)}.tar.xz"
   try:
     with requests.get(url, stream=True) as r:
-      r.raise_for_status()
-      with open(file_name, 'wb') as f:
-        with gzip.GzipFile(fileobj=r.raw) as decompressed:
-          shutil.copyfileobj(decompressed, f)
+        r.raise_for_status()
+        with open(file_name, "wb") as f:
+          shutil.copyfileobj(r.raw, f)
     msg: dict[str, str] = {"ok": file_name}
-    return json.dumps(msg)
+    return msg
   except Exception as e:
     msg = {"error": str(e)}
-    return json.dumps(msg)
+    return msg
 
 @MCP.tool(tags={"local-services"})
 def get_curies_entity_from_dbssert_ner(entity: Annotated[str, "Entity text to perform NER lookup on."]) -> Union[str, dict[str, Any]]:
@@ -206,7 +205,7 @@ def get_curies_entity_from_dbssert_ner(entity: Annotated[str, "Entity text to pe
     Error format: {"error": "message"} on failure.
     Requires localhost:8052 (dbssert) to be running.
   """
-  url: str = f"http://localhost:8052/curies-with-ner?entity={entity}"
+  url: str = f"http://localhost:8052/curies-with-ner?entity={quote(entity)}"
   try:
     with requests.get(url, stream=True) as r:
       r.raise_for_status()
@@ -229,14 +228,46 @@ def get_canonical_curie_information_from_dbssert(curie: Annotated[str, "CURIE id
     Error format: {"error": "message"} on failure.
     Requires localhost:8052 (dbssert) to be running.
   """
-  url: str = f"http://localhost:8052/canonical-curie-information?curie={curie}"
+  url: str = f"http://localhost:8052/canonical-curie-information?curie={quote(curie)}"
   try:
     with requests.get(url, stream=True) as r:
       r.raise_for_status()
       return r.text
   except Exception as e:
-    msg = {"error": str(e)}
+    msg: dict[str, str] = {"error": str(e)}
     return msg
+
+@MCP.tool(tags={"local-services"})
+def check_local_service_statuses() -> dict[str, Any]:
+  """Checks the health status of local services.
+
+  Returns a dictionary with the following keys and values:
+
+  - "PMC_MIRROR": A dictionary with either "ok" and the response text from the health check, or "error" and the error message.
+  - "DBSSERT_API": A dictionary with either "ok" and the response text from the health check, or "error" and the error message.
+
+  Raises / Notes:
+    Error format: {"error": "message"} on failure.
+    Requires localhost:8051 (PMC mirror) and localhost:8052 (dbssert) to be running.
+  """
+  msg: dict[str, Any] = {}
+  url: str = "http://localhost:8051/health"
+  try:
+    with requests.get(url, stream=True) as r:
+      r.raise_for_status()
+      msg["PMC_MIRROR"] = {"ok": r.text}
+  except Exception as e:
+    msg["PMC_MIRROR"] = {"error": str(e)}
+
+  url = "http://localhost:8052/health"
+  try:
+    with requests.get(url, stream=True) as r:
+      r.raise_for_status()
+      msg["DBSSERT_API"] = {"ok": r.text}
+  except Exception as e:
+    msg["DBSSERT_API"] = {"error": str(e)}
+
+  return msg
 
 def serve_mcp() -> None:
   MCP.run() # pyright: ignore
