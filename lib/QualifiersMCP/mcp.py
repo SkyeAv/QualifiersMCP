@@ -27,13 +27,13 @@ def get_biolink_qualifier_documentation(qualifier: Annotated[str, "The Biolink q
   """Fetches Biolink qualifier documentation from GitHub.
 
   Args:
-      qualifier: The Biolink qualifier name to retrieve documentation for.
+    qualifier: The Biolink qualifier name to retrieve documentation for.
 
   Returns:
-      Markdown-formatted documentation text extracted from the qualifier's index.html page.
+    Markdown-formatted documentation text extracted from the qualifier's index.html page.
 
   Raises / Notes:
-      Error format: {"error": "message"} on failure.
+    Error format: {"error": "message"} on failure.
   """
   url: str = f"https://raw.githubusercontent.com/biolink/biolink-model/gh-pages/{qualifier}/index.html"
   response: object = requests.get(url, timeout=30)
@@ -46,13 +46,13 @@ def get_table_configuration_documentation() -> str:
   """Retrieves Tablassert Table Configuration documentation from GitHub.
 
   Args:
-      None.
+    None.
 
   Returns:
-      Raw markdown documentation text from the Tablassert configuration guide.
+    Raw markdown documentation text from the Tablassert configuration guide.
 
   Raises / Notes:
-      Error format: {"error": "message"} on failure.
+    Error format: {"error": "message"} on failure.
   """
   url: str = "https://raw.githubusercontent.com/SkyeAv/Tablassert/main/docs/configuration/table.md"
   response: object = requests.get(url, timeout=30)
@@ -64,13 +64,13 @@ def get_table_configuration_model_schema() -> str:
   """Returns JSON schema for Tablassert Section model.
 
   Args:
-      None.
+    None.
 
   Returns:
-      JSON schema string defining the structure and validation rules for Tablassert Section objects.
+    JSON schema string defining the structure and validation rules for Tablassert Section objects.
 
   Raises / Notes:
-      Error format: {"error": "message"} on failure.
+    Error format: {"error": "message"} on failure.
   """
   return Section.model_json_schema()
 
@@ -80,13 +80,13 @@ def get_biolink_qualifier_list() -> str:
   """Lists all available Biolink qualifier enum values.
 
   Args:
-      None.
+    None.
 
   Returns:
-      Newline-separated string of all Biolink qualifier enum values.
+    Newline-separated string of all Biolink qualifier enum values.
 
   Raises / Notes:
-      Error format: {"error": "message"} on failure.
+    Error format: {"error": "message"} on failure.
   """
   return "\n".join(q.value for q in Qualifiers)
 
@@ -95,13 +95,13 @@ def read_yaml_to_sections_json(file_path: Annotated[str, "Path to the YAML file 
   """Converts YAML table configuration to Section JSON list.
 
   Args:
-      file_path: Absolute or relative path to the YAML configuration file.
+    file_path: Absolute or relative path to the YAML configuration file.
 
   Returns:
-      List of dictionaries representing Tablassert Section objects.
+    List of dictionaries representing Tablassert Section objects.
 
   Raises / Notes:
-      Error format: {"error": "message"} on failure.
+    Error format: {"error": "message"} on failure.
   """
   serialized_object: object = from_yaml(file_path)
   sections: Any = fastmerge(serialized_object)
@@ -112,14 +112,14 @@ def write_json_table_configuration_to_yaml(json_configuration: Annotated[str, "J
   """Converts JSON table configuration to YAML file.
 
   Args:
-      json_configuration: JSON-formatted string containing the table configuration.
-      file_path: Absolute or relative path where the YAML file will be saved.
+    json_configuration: JSON-formatted string containing the table configuration.
+    file_path: Absolute or relative path where the YAML file will be saved.
 
   Returns:
-      None.
+    None.
 
   Raises / Notes:
-      Error format: {"error": "message"} on failure.
+    Error format: {"error": "message"} on failure.
   """
   serialized_object: object = json.loads(json_configuration)
   with open(file_path, "w") as f:
@@ -130,13 +130,13 @@ def validate_json_table_configuration_syntax(json_configuration: Annotated[str, 
   """Validates JSON table configuration against Section model schema.
 
   Args:
-      json_configuration: JSON-formatted string containing the table configuration to validate.
+    json_configuration: JSON-formatted string containing the table configuration to validate.
 
   Returns:
-      {"ok": 200} on success, {"error": "message"} on validation failure.
+    {"ok": 200} on success, {"error": "message"} on validation failure.
 
   Raises / Notes:
-      Error format: {"error": "message"} on failure.
+    Error format: {"error": "message"} on failure.
   """
   serialized_object: object = json.loads(json_configuration)
   sections: Any = fastmerge(serialized_object)
@@ -153,16 +153,16 @@ def download_pmc_file_from_local_mirror(pmc_id: Annotated[str, "PMC identifier (
   """Downloads PMC file from local HTTP mirror service.
 
   Args:
-      pmc_id: PubMed Central identifier, with or without 'PMC' prefix.
-      file_name: Name of the specific file to extract from the PMC archive.
-      download_root: Base directory path where PMC tar archives are stored.
+    pmc_id: PubMed Central identifier, with or without 'PMC' prefix.
+    file_name: Name of the specific file to extract from the PMC archive.
+    download_root: Base directory path where PMC tar archives are stored.
 
   Returns:
-      JSON string {"ok": "file_name"} on success, {"error": "message"} on failure.
+    JSON string {"ok": "file_name"} on success, {"error": "message"} on failure.
 
   Raises / Notes:
-      Error format: {"error": "message"} on failure.
-      Requires localhost:8051 (PMC mirror) to be running.
+    Error format: {"error": "message"} on failure.
+    Requires localhost:8051 (PMC mirror) to be running.
   """
   if "PMC" not in pmc_id:
     pmc_id = f"PMC{pmc_id}"
@@ -185,14 +185,14 @@ def get_curies_entity_from_dbssert_ner(entity: Annotated[str, "Entity text to pe
   """Performs NER lookup on entity to find matching CURIEs via dbssert.
 
   Args:
-      entity: Text string of the entity to search for.
+    entity: Text string of the entity to search for.
 
   Returns:
-      Response text with matching CURIEs on success, {"error": "message"} on failure.
+    Response text with matching CURIEs on success, {"error": "message"} on failure.
 
   Raises / Notes:
-      Error format: {"error": "message"} on failure.
-      Requires localhost:8052 (dbssert) to be running.
+    Error format: {"error": "message"} on failure.
+    Requires localhost:8052 (dbssert) to be running.
   """
   url: str = f"http://localhost:8052/curies-with-ner?entity={entity}"
   try:
@@ -208,14 +208,14 @@ def get_canonical_curie_information_from_dbssert(curie: Annotated[str, "CURIE id
   """Retrieves canonical CURIE information from dbssert.
 
   Args:
-      curie: CURIE identifier string (e.g., 'HGNC:12345').
+    curie: CURIE identifier string (e.g., 'HGNC:12345').
 
   Returns:
-      Response text with canonical CURIE information on success, {"error": "message"} on failure.
+    Response text with canonical CURIE information on success, {"error": "message"} on failure.
 
   Raises / Notes:
-      Error format: {"error": "message"} on failure.
-      Requires localhost:8052 (dbssert) to be running.
+    Error format: {"error": "message"} on failure.
+    Requires localhost:8052 (dbssert) to be running.
   """
   url: str = f"http://localhost:8052/canonical-curie-information?curie={curie}"
   try:
