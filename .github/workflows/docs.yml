@@ -2,7 +2,7 @@ name: Deploy MkDocs & Docker to GHCR
 on:
   push:
     branches:
-      - main
+      - master
 permissions:
   contents: write
   packages: write
